@@ -4,10 +4,14 @@ import { Column, ColumnSchema } from './columns.schema';
 import { ColumnsService } from './columns.service';
 import { ColumnsController } from './columns.controller';
 import { EventsModule } from '../events/events.module';
+import { Board, BoardSchema } from '../boards/boards.schema';
 
 @Module({
   imports: [
-    MongooseModule.forFeature([{ name: Column.name, schema: ColumnSchema }]),
+    MongooseModule.forFeature([
+      { name: Column.name, schema: ColumnSchema },
+      { name: Board.name, schema: BoardSchema },
+    ]),
     EventsModule,
   ],
   providers: [ColumnsService],

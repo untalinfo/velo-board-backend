@@ -8,11 +8,13 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Column, ColumnDocument } from './columns.schema';
 import { EventsGateway } from '../events/events.gateway';
+import { Board, BoardDocument } from '../boards/boards.schema';
 
 @Injectable()
 export class ColumnsService {
   constructor(
     @InjectModel(Column.name) private columnModel: Model<ColumnDocument>,
+    @InjectModel(Board.name) private boardModel: Model<BoardDocument>,
     private readonly eventsGateway: EventsGateway,
   ) {}
 
@@ -21,32 +23,24 @@ export class ColumnsService {
       if (!data.boardId) {
         throw new BadRequestException('El ID del tablero es requerido');
       }
-
       if (!Types.ObjectId.isValid(data.boardId)) {
         throw new BadRequestException('El ID del tablero no es válido');
       }
-
-      // Verificar si el board existe
-      const boardExists = await this.columnModel.findOne({
-        boardId: data.boardId,
-      });
+      const boardExists = await this.boardModel.findById(data.boardId);
       if (!boardExists) {
         throw new BadRequestException('El tablero especificado no existe');
       }
-
       const lastColumn = await this.columnModel
-        .findOne({ boardId: data.boardId })
+        .findOne({ boardId: new Types.ObjectId(data.boardId) })
         .sort({ position: -1 })
         .exec();
-
       const position = lastColumn ? lastColumn.position + 1 : 0;
-
       const column = await this.columnModel.create({
         ...data,
+        boardId: new Types.ObjectId(data.boardId),
         position,
       });
-
-      this.eventsGateway.notifyColumnCreated(data.boardId.toString(), column);
+      this.eventsGateway.notifyColumnCreated(column.boardId.toString(), column);
       return column;
     } catch (error: unknown) {
       if (error instanceof BadRequestException) {
@@ -65,11 +59,13 @@ export class ColumnsService {
   }
 
   async findByBoard(boardId: string): Promise<Column[]> {
-    if (!boardId) {
+    if (!Types.ObjectId.isValid(boardId)) {
       throw new BadRequestException('Board ID is required');
     }
-
-    return this.columnModel.find({ boardId }).sort({ position: 1 }).exec();
+    return this.columnModel
+      .find({ boardId: new Types.ObjectId(boardId) })
+      .sort({ position: 1 })
+      .exec();
   }
 
   async findById(id: string): Promise<Column> {
@@ -90,15 +86,20 @@ export class ColumnsService {
       if (!Types.ObjectId.isValid(id)) {
         throw new BadRequestException('El ID de la columna no es válido');
       }
-
+      if (data.boardId && !Types.ObjectId.isValid(data.boardId)) {
+        throw new BadRequestException('El ID del tablero no es válido');
+      }
+      const updateData = {
+        ...data,
+        ...(data.boardId && { boardId: new Types.ObjectId(data.boardId) }),
+        updatedAt: new Date(),
+      };
       const updatedColumn = await this.columnModel
-        .findByIdAndUpdate(id, data, { new: true })
+        .findByIdAndUpdate(id, updateData, { new: true })
         .exec();
-
       if (!updatedColumn) {
         throw new NotFoundException(`No se encontró la columna con ID ${id}`);
       }
-
       this.eventsGateway.notifyColumnUpdate(
         updatedColumn.boardId.toString(),
         updatedColumn,
