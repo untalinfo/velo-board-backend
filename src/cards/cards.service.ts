@@ -58,8 +58,10 @@ export class CardsService {
       throw new BadRequestException('Invalid column ID');
     }
 
+    console.log('here');
+
     return this.cardModel
-      .find({ columnId: new Types.ObjectId(columnId) })
+      .find({ columnId: columnId })
       .sort({ position: 1 })
       .exec();
   }
