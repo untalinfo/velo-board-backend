@@ -6,10 +6,14 @@ import {
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Card, CardDocument } from './cards.schema';
+import { EventsGateway } from '../events/events.gateway';
 
 @Injectable()
 export class CardsService {
-  constructor(@InjectModel(Card.name) private cardModel: Model<CardDocument>) {}
+  constructor(
+    @InjectModel(Card.name) private cardModel: Model<CardDocument>,
+    private readonly eventsGateway: EventsGateway,
+  ) {}
 
   async create(data: Partial<Card>): Promise<Card> {
     if (!data.columnId) {
@@ -20,6 +24,14 @@ export class CardsService {
       throw new BadRequestException('Invalid column ID');
     }
 
+    if (!data.boardId) {
+      throw new BadRequestException('Board ID is required');
+    }
+
+    if (!Types.ObjectId.isValid(data.boardId)) {
+      throw new BadRequestException('Invalid board ID');
+    }
+
     // Obtener la última posición en la columna
     const lastCard = await this.cardModel
       .findOne({ columnId: data.columnId })
@@ -28,10 +40,13 @@ export class CardsService {
 
     const position = lastCard ? lastCard.position + 1 : 0;
 
-    return this.cardModel.create({
+    const card = await this.cardModel.create({
       ...data,
       position,
     });
+
+    this.eventsGateway.notifyCardCreated(data.boardId.toString(), card);
+    return card;
   }
 
   async findAll(): Promise<Card[]> {
@@ -71,7 +86,7 @@ export class CardsService {
       throw new BadRequestException('Invalid column ID');
     }
 
-    return this.cardModel
+    const updatedCard = await this.cardModel
       .findByIdAndUpdate(
         id,
         {
@@ -81,6 +96,16 @@ export class CardsService {
         { new: true },
       )
       .exec();
+
+    if (!updatedCard) {
+      throw new NotFoundException('Card not found');
+    }
+
+    this.eventsGateway.notifyCardUpdate(
+      updatedCard.boardId.toString(),
+      updatedCard,
+    );
+    return updatedCard;
   }
 
   async delete(id: string): Promise<Card | null> {
@@ -88,7 +113,14 @@ export class CardsService {
       throw new BadRequestException('Invalid card ID');
     }
 
-    return this.cardModel.findByIdAndDelete(id).exec();
+    const card = await this.cardModel.findById(id).exec();
+    if (!card) {
+      throw new NotFoundException('Card not found');
+    }
+
+    const deletedCard = await this.cardModel.findByIdAndDelete(id).exec();
+    this.eventsGateway.notifyCardDeleted(card.boardId.toString(), { id });
+    return deletedCard;
   }
 
   async moveCard(
@@ -164,6 +196,12 @@ export class CardsService {
     if (!updatedCard) {
       throw new NotFoundException(`Card with id ${cardId} not found`);
     }
+
+    this.eventsGateway.notifyCardMoved(card.boardId.toString(), {
+      cardId,
+      targetColumnId,
+      newPosition,
+    });
 
     return updatedCard;
   }

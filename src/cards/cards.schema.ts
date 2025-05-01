@@ -3,8 +3,8 @@ import { Document, Types } from 'mongoose';
 
 export type CardDocument = Card & Document;
 
-@Schema()
-export class Card {
+@Schema({ timestamps: true })
+export class Card extends Document {
   @Prop({ required: true })
   title: string;
 
@@ -14,17 +14,14 @@ export class Card {
   @Prop({ type: Types.ObjectId, ref: 'Column', required: true })
   columnId: Types.ObjectId;
 
-  @Prop({ required: true })
+  @Prop({ type: Types.ObjectId, ref: 'Board', required: true })
+  boardId: Types.ObjectId;
+
+  @Prop({ default: 0 })
   position: number;
 
-  @Prop({ type: [String], default: [] })
+  @Prop([String])
   tags: string[];
-
-  @Prop({ default: Date.now })
-  createdAt: Date;
-
-  @Prop({ default: Date.now })
-  updatedAt: Date;
 }
 
 export const CardSchema = SchemaFactory.createForClass(Card);

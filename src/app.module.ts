@@ -6,6 +6,7 @@ import { AppService } from './app.service';
 import { ColumnsModule } from './columns/columns.module';
 import { CardsModule } from './cards/cards.module';
 import { BoardsModule } from './boards/boards.module';
+import { EventsModule } from './events/events.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { BoardsModule } from './boards/boards.module';
     BoardsModule,
     ColumnsModule,
     CardsModule,
+    EventsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

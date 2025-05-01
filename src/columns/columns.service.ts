@@ -6,11 +6,13 @@ import {
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Column, ColumnDocument } from './columns.schema';
+import { EventsGateway } from '../events/events.gateway';
 
 @Injectable()
 export class ColumnsService {
   constructor(
     @InjectModel(Column.name) private columnModel: Model<ColumnDocument>,
+    private readonly eventsGateway: EventsGateway,
   ) {}
 
   async create(data: Partial<Column>): Promise<Column> {
@@ -24,12 +26,16 @@ export class ColumnsService {
       .sort({ position: -1 })
       .exec();
 
+    // Si no hay columnas, empezar desde 0, si hay, usar la siguiente posición
     const position = lastColumn ? lastColumn.position + 1 : 0;
 
-    return this.columnModel.create({
+    const column = await this.columnModel.create({
       ...data,
       position,
     });
+
+    this.eventsGateway.notifyColumnCreated(data.boardId, column);
+    return column;
   }
 
   async findAll(): Promise<Column[]> {
@@ -57,26 +63,20 @@ export class ColumnsService {
     return column;
   }
 
-  async update(id: string, data: Partial<Column>): Promise<Column> {
+  async update(id: string, data: Partial<Column>): Promise<Column | null> {
     if (!Types.ObjectId.isValid(id)) {
       throw new BadRequestException('Invalid column ID');
     }
 
     const updatedColumn = await this.columnModel
-      .findByIdAndUpdate(
-        id,
-        {
-          ...data,
-          updatedAt: new Date(),
-        },
-        { new: true },
-      )
+      .findByIdAndUpdate(id, data, { new: true })
       .exec();
 
     if (!updatedColumn) {
       throw new NotFoundException(`Column with ID ${id} not found`);
     }
 
+    this.eventsGateway.notifyColumnUpdate(updatedColumn.boardId, updatedColumn);
     return updatedColumn;
   }
 
@@ -85,10 +85,25 @@ export class ColumnsService {
       throw new BadRequestException('Invalid column ID');
     }
 
-    const result = await this.columnModel.findByIdAndDelete(id).exec();
-    if (!result) {
+    const column = await this.columnModel.findById(id).exec();
+    if (!column) {
       throw new NotFoundException(`Column with ID ${id} not found`);
     }
+
+    await this.columnModel.findByIdAndDelete(id).exec();
+
+    // Reordenar las columnas restantes
+    await this.columnModel
+      .updateMany(
+        {
+          boardId: column.boardId,
+          position: { $gt: column.position },
+        },
+        { $inc: { position: -1 } },
+      )
+      .exec();
+
+    this.eventsGateway.notifyColumnDeleted(column.boardId, { id });
   }
 
   async moveColumn(
@@ -96,8 +111,16 @@ export class ColumnsService {
     newPosition: number,
     boardId: string,
   ): Promise<Column> {
-    const column = await this.findById(columnId);
+    const column = await this.columnModel.findById(columnId).exec();
+    if (!column) {
+      throw new NotFoundException(`Column with ID ${columnId} not found`);
+    }
+
     const originalPosition = column.position;
+
+    if (newPosition === originalPosition) {
+      return column;
+    }
 
     // Si la columna se mueve en el mismo tablero
     if (boardId === column.boardId) {
@@ -126,7 +149,15 @@ export class ColumnsService {
       }
     }
 
-    // Actualizar la posición de la columna
-    return this.update(columnId, { position: newPosition });
+    const updatedColumn = await this.columnModel
+      .findByIdAndUpdate(columnId, { position: newPosition }, { new: true })
+      .exec();
+
+    if (!updatedColumn) {
+      throw new NotFoundException(`Column with ID ${columnId} not found`);
+    }
+
+    this.eventsGateway.notifyColumnUpdate(boardId, updatedColumn);
+    return updatedColumn;
   }
 }

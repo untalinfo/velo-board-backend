@@ -8,11 +8,13 @@ import {
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Board, BoardDocument } from './boards.schema';
+import { EventsGateway } from '../events/events.gateway';
 
 @Injectable()
 export class BoardsService implements OnModuleInit {
   constructor(
     @InjectModel(Board.name) private boardModel: Model<BoardDocument>,
+    private readonly eventsGateway: EventsGateway,
   ) {}
 
   // Se ejecuta cuando el módulo se inicializa
@@ -117,6 +119,7 @@ export class BoardsService implements OnModuleInit {
         throw new NotFoundException(`Board with ID ${id} not found`);
       }
 
+      this.eventsGateway.notifyBoardUpdate(id, updatedBoard);
       return updatedBoard;
     }
 
@@ -158,6 +161,11 @@ export class BoardsService implements OnModuleInit {
       throw new NotFoundException(`Board with ID ${boardId} not found`);
     }
 
+    this.eventsGateway.notifyBoardMemberAdded(boardId, {
+      boardId,
+      memberId,
+      userId,
+    });
     return updatedBoard;
   }
 
@@ -185,6 +193,11 @@ export class BoardsService implements OnModuleInit {
       throw new NotFoundException(`Board with ID ${boardId} not found`);
     }
 
+    this.eventsGateway.notifyBoardMemberRemoved(boardId, {
+      boardId,
+      memberId,
+      userId,
+    });
     return updatedBoard;
   }
 
