@@ -9,9 +9,12 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Board, BoardDocument } from './boards.schema';
 import { EventsGateway } from '../events/events.gateway';
+import { Logger } from '@nestjs/common';
 
 @Injectable()
 export class BoardsService implements OnModuleInit {
+  private readonly logger = new Logger(BoardsService.name);
+
   constructor(
     @InjectModel(Board.name) private boardModel: Model<BoardDocument>,
     private readonly eventsGateway: EventsGateway,
@@ -23,18 +26,25 @@ export class BoardsService implements OnModuleInit {
   }
 
   private async ensureDefaultBoardExists() {
-    const defaultBoard = await this.boardModel
-      .findOne({ isDefaultBoard: true })
-      .exec();
+    try {
+      const defaultBoard = await this.boardModel
+        .findOne({ isDefaultBoard: true })
+        .exec();
 
-    if (!defaultBoard) {
-      await this.boardModel.create({
-        title: 'VeloBoard',
-        description: 'Default board for all users',
-        members: [],
-        owner: new Types.ObjectId(), // ID del sistema
-        isDefaultBoard: true,
-      });
+      if (!defaultBoard) {
+        await this.boardModel.create({
+          title: 'VeloBoard',
+          description: 'Default board for all users',
+          members: [],
+          owner: new Types.ObjectId(), // ID del sistema
+          isDefaultBoard: true,
+        });
+        this.logger.log('Default board created successfully');
+      } else {
+        this.logger.log('Default board already exists');
+      }
+    } catch (error) {
+      this.logger.error('Error ensuring default board exists:', error);
     }
   }
 

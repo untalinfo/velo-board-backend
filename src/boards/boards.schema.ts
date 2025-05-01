@@ -25,7 +25,7 @@ export class Board {
   @Prop({ default: '#FFFFFF' })
   backgroundColor: string;
 
-  @Prop({ default: false, unique: true })
+  @Prop({ default: false })
   isDefaultBoard: boolean;
 }
 
