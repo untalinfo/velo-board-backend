@@ -68,6 +68,17 @@ export class CardsService {
       .exec();
   }
 
+  async findByBoard(boardId: string): Promise<Card[]> {
+    if (!Types.ObjectId.isValid(boardId)) {
+      throw new BadRequestException('Invalid column ID');
+    }
+
+    return this.cardModel
+      .find({ boardId: new Types.ObjectId(boardId) })
+      .sort({ position: 1 })
+      .exec();
+  }
+
   async findById(id: string): Promise<Card> {
     if (!Types.ObjectId.isValid(id)) {
       throw new BadRequestException('Invalid card ID');

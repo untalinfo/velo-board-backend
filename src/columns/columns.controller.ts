@@ -47,9 +47,9 @@ export class ColumnsController {
   }
 
   @Delete(':id')
-  @HttpCode(HttpStatus.NO_CONTENT)
-  async delete(@Param('id') id: string) {
-    await this.columnsService.delete(id);
+  @HttpCode(HttpStatus.OK)
+  async delete(@Param('id') id: string): Promise<{ id: string }> {
+    return this.columnsService.delete(id);
   }
 
   @Put(':id/move')

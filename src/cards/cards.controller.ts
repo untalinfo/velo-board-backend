@@ -36,6 +36,11 @@ export class CardsController {
     return this.cardsService.findByColumn(columnId);
   }
 
+  @Get('board/:boardId')
+  async findByBoard(@Param('boardId') boardId: string) {
+    return this.cardsService.findByBoard(boardId);
+  }
+
   @Get(':id')
   async findById(@Param('id') id: string) {
     return this.cardsService.findById(id);
@@ -47,9 +52,9 @@ export class CardsController {
   }
 
   @Delete(':id')
-  @HttpCode(HttpStatus.NO_CONTENT)
+  @HttpCode(HttpStatus.OK)
   async delete(@Param('id') id: string) {
-    await this.cardsService.delete(id);
+    return await this.cardsService.delete(id);
   }
 
   @Put(':id/move')
