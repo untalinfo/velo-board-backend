@@ -9,12 +9,14 @@ import { Model, Types } from 'mongoose';
 import { Column, ColumnDocument } from './columns.schema';
 import { EventsGateway } from '../events/events.gateway';
 import { Board, BoardDocument } from '../boards/boards.schema';
+import { Card, CardDocument } from '../cards/cards.schema';
 
 @Injectable()
 export class ColumnsService {
   constructor(
     @InjectModel(Column.name) private columnModel: Model<ColumnDocument>,
     @InjectModel(Board.name) private boardModel: Model<BoardDocument>,
+    @InjectModel(Card.name) private cardModel: Model<CardDocument>,
     private readonly eventsGateway: EventsGateway,
   ) {}
 
@@ -37,6 +39,7 @@ export class ColumnsService {
       const position = lastColumn ? lastColumn.position + 1 : 0;
       const column = await this.columnModel.create({
         ...data,
+        title: data.title || 'New List',
         boardId: new Types.ObjectId(data.boardId),
         position,
       });
@@ -120,7 +123,7 @@ export class ColumnsService {
     }
   }
 
-  async delete(id: string): Promise<void> {
+  async delete(id: string): Promise<{ id: string }> {
     try {
       if (!Types.ObjectId.isValid(id)) {
         throw new BadRequestException('El ID de la columna no es válido');
@@ -130,6 +133,11 @@ export class ColumnsService {
       if (!column) {
         throw new NotFoundException(`No se encontró la columna con ID ${id}`);
       }
+
+      // Eliminar todas las tarjetas asociadas a la columna
+      await this.cardModel
+        .deleteMany({ columnId: new Types.ObjectId(id) })
+        .exec();
 
       await this.columnModel.findByIdAndDelete(id).exec();
 
@@ -144,6 +152,7 @@ export class ColumnsService {
         .exec();
 
       this.eventsGateway.notifyColumnDeleted(column.boardId.toString(), { id });
+      return { id };
     } catch (error: unknown) {
       if (
         error instanceof BadRequestException ||
