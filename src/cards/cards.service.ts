@@ -168,14 +168,20 @@ export class CardsService {
         // Mover a una columna diferente
         await this.cardModel
           .updateMany(
-            { columnId: originalColumnId, position: { $gt: originalPosition } },
+            {
+              columnId: new Types.ObjectId(originalColumnId),
+              position: { $gt: originalPosition },
+            },
             { $inc: { position: -1 } },
           )
           .exec();
 
         await this.cardModel
           .updateMany(
-            { columnId: targetColumnId, position: { $gte: newPosition } },
+            {
+              columnId: new Types.ObjectId(targetColumnId),
+              position: { $gte: newPosition },
+            },
             { $inc: { position: 1 } },
           )
           .exec();
@@ -186,7 +192,7 @@ export class CardsService {
           await this.cardModel
             .updateMany(
               {
-                columnId: originalColumnId,
+                columnId: new Types.ObjectId(originalColumnId),
                 position: { $gt: originalPosition, $lte: newPosition },
               },
               { $inc: { position: -1 } },
@@ -197,8 +203,8 @@ export class CardsService {
           await this.cardModel
             .updateMany(
               {
-                columnId: originalColumnId,
-                position: { $gte: newPosition, $lt: originalPosition },
+                columnId: new Types.ObjectId(originalColumnId),
+                position: { $gte: newPosition },
               },
               { $inc: { position: 1 } },
             )

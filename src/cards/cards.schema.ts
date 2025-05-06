@@ -27,5 +27,5 @@ export class Card extends Document {
 export const CardSchema = SchemaFactory.createForClass(Card);
 
 // Crear índices
-CardSchema.index({ columnId: 1, position: 1 }, { unique: true });
+CardSchema.index({ columnId: 1, position: 1 });
 CardSchema.index({ title: 'text' }); // Para búsquedas por texto
