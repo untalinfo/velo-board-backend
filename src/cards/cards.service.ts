@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  Logger,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
@@ -11,6 +12,7 @@ import { Column, ColumnDocument } from '../columns/columns.schema';
 
 @Injectable()
 export class CardsService {
+  private readonly logger = new Logger(CardsService.name);
   constructor(
     @InjectModel(Card.name) private cardModel: Model<CardDocument>,
     @InjectModel(Column.name) private columnModel: Model<ColumnDocument>,
@@ -151,93 +153,94 @@ export class CardsService {
       throw new BadRequestException('Invalid card ID');
     }
     if (!Types.ObjectId.isValid(targetColumnId)) {
-      throw new BadRequestException('Invalid column ID');
+      throw new BadRequestException('Invalid target column ID');
+    }
+    if (newPosition < 0) {
+      throw new BadRequestException('Position cannot be negative');
     }
 
-    const card = await this.findById(cardId);
-    const originalPosition = card.position;
-    const originalColumnId = card.columnId;
+    try {
+      const card = await this.findById(cardId);
+      const originalPosition = card.position;
+      const originalColumnId = card.columnId.toString();
 
-    // Obtener la columna destino y su boardId
-    const targetColumn = await this.columnModel.findById(targetColumnId).exec();
-    if (!targetColumn) {
-      throw new NotFoundException('Target column not found');
-    }
-    const newBoardId = targetColumn.boardId;
+      if (targetColumnId !== originalColumnId) {
+        // Mover a una columna diferente
+        await this.cardModel
+          .updateMany(
+            { columnId: originalColumnId, position: { $gt: originalPosition } },
+            { $inc: { position: -1 } },
+          )
+          .exec();
 
-    if (targetColumnId !== originalColumnId.toString()) {
-      // Reordenar tarjetas en la columna original
-      await this.cardModel
-        .updateMany(
-          {
-            columnId: originalColumnId,
-            position: { $gt: originalPosition },
-          },
-          { $inc: { position: -1 } },
-        )
-        .exec();
-
-      // Hacer espacio en la nueva columna
-      await this.cardModel
-        .updateMany(
-          {
-            columnId: new Types.ObjectId(targetColumnId),
-            position: { $gte: newPosition },
-          },
-          { $inc: { position: 1 } },
-        )
-        .exec();
-    } else {
-      // Mover en la misma columna usando posición temporal para evitar conflicto de índice único
-      if (newPosition > originalPosition) {
-        await this.cardModel.findByIdAndUpdate(cardId, { position: -1 });
-        await this.cardModel.updateMany(
-          {
-            columnId: originalColumnId,
-            position: { $gt: originalPosition, $lte: newPosition },
-          },
-          { $inc: { position: -1 } },
-        );
-        await this.cardModel.findByIdAndUpdate(cardId, {
-          position: newPosition,
-          columnId: new Types.ObjectId(targetColumnId),
-          boardId: newBoardId,
-        });
-      } else if (newPosition < originalPosition) {
-        await this.cardModel.findByIdAndUpdate(cardId, { position: -1 });
-        await this.cardModel.updateMany(
-          {
-            columnId: originalColumnId,
-            position: { $gte: newPosition, $lt: originalPosition },
-          },
-          { $inc: { position: 1 } },
-        );
-        await this.cardModel.findByIdAndUpdate(cardId, {
-          position: newPosition,
-          columnId: new Types.ObjectId(targetColumnId),
-          boardId: newBoardId,
-        });
+        await this.cardModel
+          .updateMany(
+            { columnId: targetColumnId, position: { $gte: newPosition } },
+            { $inc: { position: 1 } },
+          )
+          .exec();
+      } else {
+        // Mover dentro de la misma columna
+        if (newPosition > originalPosition) {
+          // Mover hacia abajo
+          await this.cardModel
+            .updateMany(
+              {
+                columnId: originalColumnId,
+                position: { $gt: originalPosition, $lte: newPosition },
+              },
+              { $inc: { position: -1 } },
+            )
+            .exec();
+        } else if (newPosition < originalPosition) {
+          // Mover hacia arriba
+          await this.cardModel
+            .updateMany(
+              {
+                columnId: originalColumnId,
+                position: { $gte: newPosition, $lt: originalPosition },
+              },
+              { $inc: { position: 1 } },
+            )
+            .exec();
+        }
       }
+
+      // Actualizar la tarjeta movida
+      const updatedCard = await this.cardModel
+        .findByIdAndUpdate(
+          cardId,
+          {
+            position: newPosition,
+            columnId: new Types.ObjectId(targetColumnId),
+            updatedAt: new Date(),
+          },
+          { new: true },
+        )
+        .exec();
+
+      if (!updatedCard) {
+        throw new NotFoundException(
+          `Card with id ${cardId} could not be updated`,
+        );
+      }
+
+      // Notificar a los clientes
+      this.eventsGateway.notifyCardMoved(updatedCard.boardId.toString(), {
+        cardId: (updatedCard._id as Types.ObjectId).toString(),
+        originalColumnId,
+        targetColumnId,
+        newPosition: updatedCard.position,
+      });
+
+      return updatedCard;
+    } catch (error) {
+      this.logger.error(
+        `Error moving card ${cardId} to col ${targetColumnId} pos ${newPosition}: ${
+          error instanceof Error ? error.message : 'Unknown error'
+        }`,
+      );
+      throw error;
     }
-
-    // Actualizar la posición, columnId y boardId de la tarjeta
-    await this.cardModel.findByIdAndUpdate(cardId, {
-      position: newPosition,
-      columnId: new Types.ObjectId(targetColumnId),
-      boardId: newBoardId,
-    });
-    const updatedCard = await this.cardModel.findById(cardId);
-
-    if (!updatedCard) {
-      throw new NotFoundException(`Card with id ${cardId} not found`);
-    }
-
-    this.eventsGateway.notifyCardMoved(newBoardId.toString(), {
-      cardId,
-      targetColumnId,
-      newPosition,
-    });
-
-    return updatedCard;
   }
 }
