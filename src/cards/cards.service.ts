@@ -159,6 +159,18 @@ export class CardsService {
       throw new BadRequestException('Position cannot be negative');
     }
 
+    // Validate if the card exists
+    const cardExists = await this.cardModel.exists({ _id: cardId });
+    if (!cardExists) {
+      throw new NotFoundException('Card not found');
+    }
+
+    // Validate if the target column exists
+    const columnExists = await this.columnModel.exists({ _id: targetColumnId });
+    if (!columnExists) {
+      throw new NotFoundException('Target column not found');
+    }
+
     try {
       const card = await this.findById(cardId);
       const originalPosition = card.position;
@@ -204,7 +216,7 @@ export class CardsService {
             .updateMany(
               {
                 columnId: new Types.ObjectId(originalColumnId),
-                position: { $gte: newPosition },
+                position: { $gte: newPosition, $lt: originalPosition },
               },
               { $inc: { position: 1 } },
             )
