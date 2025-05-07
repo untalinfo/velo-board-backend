@@ -200,7 +200,7 @@ export class ColumnsService {
           await this.columnModel
             .updateMany(
               {
-                boardId: column.boardId,
+                boardId: new Types.ObjectId(column.boardId),
                 position: { $gt: originalPosition, $lte: newPosition },
               },
               { $inc: { position: -1 } },
@@ -210,7 +210,7 @@ export class ColumnsService {
           await this.columnModel
             .updateMany(
               {
-                boardId: column.boardId,
+                boardId: new Types.ObjectId(column.boardId),
                 position: { $gte: newPosition, $lt: originalPosition },
               },
               { $inc: { position: 1 } },

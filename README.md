@@ -1,35 +1,144 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# VeloBoard
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+![VeloBoard Logo](./assets/velo-logo.png)
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+Gestiona proyectos y tareas de forma visual con esta aplicación Kanban en tiempo real. Su frontend en React.js ofrece una experiencia de usuario intuitiva con drag & drop, mientras que el backend en NestJS con WebSockets garantiza la colaboración fluida.
 
-## Description
+## Tabla de Contenidos
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+- [Primeros Pasos](#primeros-pasos)
+- [Características](#características)
+- [Diseño Figma](#diseño-figma)
+- [Construcción](#construcción)
+- [Documentación API](#documentación-api)
+- [Contribuciones](#contribuciones)
+- [Licencia](#licencia)
+- [Autor](#autor)
 
-## Project setup
+## Primeros pasos
+
+Crea un archivo .env en la raíz del proyecto y configura esta variable de entorno:
+```
+PORT=3001 # O el puerto que prefieras para el backend
+MONGODB_URI=mongodb://localhost:27017/veloboard # Cambia si tu DB se llama diferente o está en otro host/puerto
+```
+
+Primero, Instalar dependencias:
 
 ```bash
-$ yarn install
+yarn install
 ```
+
+Segundo, ejecutar el development server:
+
+```bash
+# development
+$ yarn run start
+
+# watch mode
+$ yarn run start:dev
+
+# production mode
+$ yarn run start:prod
+```
+
+Open [http://localhost:3001](http://localhost:3001) with your browser to see the result.
+
+## Características
+
+La aplicación permite:
+
+- Creación de Tableros: Los usuarios podrán crear nuevos tableros para organizar diferentes proyectos o flujos de trabajo.
+- Columnas Personalizables: Dentro de cada tablero, los usuarios podrán crear, renombrar y eliminar columnas para representar las diferentes etapas del proceso (ej. "Por Hacer", "En Progreso", "Hecho").
+- Creación de Tarjetas: Dentro de cada columna, los usuarios podrán crear tarjetas que representan tareas individuales. Cada tarjeta tendrá al menos un título y opcionalmente una descripción más detallada.
+- Movimiento de Tarjetas (Drag & Drop): Los usuarios podrán arrastrar y soltar tarjetas entre diferentes columnas para cambiar su estado o prioridad.
+- Reordenación de Tarjetas: Dentro de cada columna, los usuarios podrán arrastrar y soltar tarjetas para cambiar su orden de prioridad.
+
+Con un diseño adaptable y enfocado en el rendimiento, VeloBoard utiliza estrategias avanzadas como Server Components y SSR para optimizar la experiencia del usuario, demostrando una sólida arquitectura y una cuidada organización del código.
+
+## Diseño Figma
+
+![Figma](./assets/figma-design.png)
+
+Puedes revisar el prototipo en el siguiente link: [Protitipo Figma](https://hoost.ru/ds/free/53474f9a/live/?macbook-air-1)
+
+## Construcción
+
+Este proyecto está construido utilizando las siguientes tecnologías y herramientas:
+
+- **NestJS**: Un framework progresivo de Node.js para construir aplicaciones del lado del servidor.
+- **MongoDB**: Una base de datos NoSQL orientada a documentos para almacenar datos de manera eficiente.
+- **TypeScript**: Un superconjunto de JavaScript que añade tipado estático al lenguaje.
+- **WebSockets**: Protocolo para comunicación en tiempo real entre cliente y servidor.
+- **Jest**: Un framework de pruebas para asegurar la calidad del código.
+- **ESLint**: Herramienta para analizar y mantener la calidad del código.
+- **Prettier**: Formateador de código para mantener consistencia en el estilo.
+
+### Estructura del proyecto
+
+La estructura del proyecto es la siguiente:
+
+```
+/velo-board-backend
+├── node_modules/       # Dependencias del proyecto
+├── dist/               # Archivos compilados
+├── src/                # Código fuente del backend
+│   ├── app.module.ts   # Módulo principal de la aplicación
+│   ├── main.ts         # Punto de entrada de la aplicación
+│   ├── modules/        # Módulos organizados por funcionalidad
+│   ├── services/       # Servicios reutilizables
+│   └── utils/          # Utilidades y helpers
+├── test/               # Pruebas unitarias y de integración
+├── .env.example        # Ejemplo de configuración de variables de entorno
+├── package.json        # Archivo de configuración de npm
+├── tsconfig.json       # Configuración de TypeScript
+└── README.md           # Documentación del proyecto
+```
+## Documentación API
+
+A continuación, se detalla la documentación de los endpoints disponibles en la API del backend de VeloBoard:
+
+| Método | Endpoint                | Descripción                                                                 | Parámetros                                                                                     | Ejemplo de Respuesta                                                                 |
+|--------|-------------------------|-----------------------------------------------------------------------------|------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------|
+| GET    | `/api/boards`           | Obtiene todos los tableros disponibles.                                     | Ninguno                                                                                        | `[{"id": "1", "name": "Proyecto A"}, {"id": "2", "name": "Proyecto B"}]`            |
+| POST   | `/api/boards`           | Crea un nuevo tablero.                                                     | `name` (string, requerido)                                                                    | `{"id": "3", "name": "Nuevo Tablero"}`                                              |
+| GET    | `/api/boards/:id`       | Obtiene los detalles de un tablero específico.                             | `id` (string, requerido)                                                                      | `{"id": "1", "name": "Proyecto A", "columns": [{"id": "1", "name": "Por Hacer"}]}`  |
+| PUT    | `/api/boards/:id`       | Actualiza la información de un tablero.                                    | `id` (string, requerido), `name` (string, opcional)                                           | `{"id": "1", "name": "Proyecto Actualizado"}`                                       |
+| DELETE | `/api/boards/:id`       | Elimina un tablero específico.                                             | `id` (string, requerido)                                                                      | `{"message": "Tablero eliminado exitosamente"}`                                     |
+| POST   | `/api/columns`          | Crea una nueva columna en un tablero.                                      | `boardId` (string, requerido), `name` (string, requerido)                                     | `{"id": "1", "name": "En Progreso", "boardId": "1"}`                                |
+| PUT    | `/api/columns/:id`      | Actualiza la información de una columna.                                   | `id` (string, requerido), `name` (string, opcional)                                           | `{"id": "1", "name": "Finalizado"}`                                                 |
+| DELETE | `/api/columns/:id`      | Elimina una columna específica.                                            | `id` (string, requerido)                                                                      | `{"message": "Columna eliminada exitosamente"}`                                     |
+| POST   | `/api/cards`            | Crea una nueva tarjeta en una columna.                                     | `columnId` (string, requerido), `title` (string, requerido), `description` (string, opcional) | `{"id": "1", "title": "Nueva Tarea", "description": "Detalles de la tarea"}`        |
+| PUT    | `/api/cards/:id`        | Actualiza la información de una tarjeta.                                   | `id` (string, requerido), `title` (string, opcional), `description` (string, opcional)        | `{"id": "1", "title": "Tarea Actualizada", "description": "Detalles actualizados"}` |
+| DELETE | `/api/cards/:id`        | Elimina una tarjeta específica.                                            | `id` (string, requerido)                                                                      | `{"message": "Tarjeta eliminada exitosamente"}`                                     |
+| PATCH  | `/api/cards/:id/move`   | Mueve una tarjeta a otra columna o cambia su posición dentro de la misma.  | `id` (string, requerido), `targetColumnId` (string, requerido), `position` (number, opcional) | `{"id": "1", "columnId": "2", "position": 1}`                                       |
+
+Esta tabla proporciona una visión general de los endpoints disponibles, sus métodos HTTP, parámetros requeridos y ejemplos de respuesta para facilitar la integración con la API.
+
+## Contribuciones
+
+Las contribuciones son bienvenidas. Por favor, sigue los siguientes pasos para contribuir:
+
+1. Haz un fork del repositorio.
+2. Crea una nueva rama (git checkout -b feature/nueva-funcionalidad).
+3. Realiza tus cambios y haz commit (git commit -am 'Añadir nueva funcionalidad').
+4. Haz push a la rama (git push origin feature/nueva-funcionalidad).
+5. Abre un Pull Request.
+
+## Licencia
+
+Este proyecto está licenciado bajo la Licencia MIT.
+
+## Autor
+
+Proyecto desarrollado por:
+
+[Untalinfo - GitHub](https://github.com/untalinfo)
+
+[LinkedIn](https://www.linkedin.com/in/untalinfo/)
+
+[email: racso1607@gmail.com](racso1607@gmail.com)
+
 
 ## Compile and run the project
 
@@ -43,56 +152,3 @@ $ yarn run start:dev
 # production mode
 $ yarn run start:prod
 ```
-
-## Run tests
-
-```bash
-# unit tests
-$ yarn run test
-
-# e2e tests
-$ yarn run test:e2e
-
-# test coverage
-$ yarn run test:cov
-```
-
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
-
-```bash
-$ yarn install -g @nestjs/mau
-$ mau deploy
-```
-
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
-
-## Resources
-
-Check out a few resources that may come in handy when working with NestJS:
-
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
